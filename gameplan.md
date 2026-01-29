@@ -1,73 +1,62 @@
-# Vampire Survivors 게임 컴포넌트 설계
+# Vampire Survivors React 컴포넌트 목록
 
-Vampire Survivors 스타일의 게임을 구현하기 위해 필요한 핵심 구성 요소들을 프로그래밍 컴포넌트 및 시스템 단위로 분류한 설계안입니다.
-
----
-
-## 1. Core Engine (게임 엔진 및 관리자)
-
-게임의 전체적인 흐름과 상태를 제어하는 핵심 레이어입니다.
-
-- **GameManager**: 게임의 전체 상태(시작, 진행, 일시정지, 게임 오버)를 관리합니다.
-- **GameLoop**: 매 프레임마다 물리 연산, 렌더링, 시스템 업데이트를 트리거합니다. (requestAnimationFrame 기반)
-- **TimeManager**: 게임 내 시간 흐름, 타이머, 웨이브 변화 시점을 관리합니다.
+나중에 조립하기 위해 미리 만들어두어야 할 핵심 요소들입니다. **UI 컴포넌트**와 실제 게임을 구성하는 **게임 엔티티(객체)**들로 나누었습니다.
 
 ---
 
-## 2. Entity System (엔티티 시스템)
+## 1. Game Overlays (UI 메뉴)
 
-게임 내에 존재하는 모든 객체들의 정의와 로직입니다.
+React로 작성하며, 게임 루프와 독립적으로 상태에 따라 표시됩니다.
 
-### **Player (플레이어)**
+- **`StartScreen.tsx`**: 게임 시작 전 초기 화면.
+- **`LevelUpModal.tsx`**: 레벨업 시 나타나는 카드 선택 화면.
+- **`PauseMenu.tsx`**: 일시정지 옵션 창.
+- **`GameOverReport.tsx`**: 게임 종료 결과 리포트.
 
-- **PlayerController**: 입력(WASD/Arrow keys)에 따른 이동 및 방향 전환 처리.
-- **PlayerStats**: HP, 이동 속도, 공격력, 획득 범위(Magnet), 운(Luck) 등의 스탯 관리.
-- **Inventory**: 현재 보유한 무기 및 패시브 아이템 목록 관리.
+## 2. HUD Components (인게임 정보 표시)
 
-### **Enemy (적/몬스터)**
+React로 작성하며, 전역 상태(Store)를 구독하여 실시간 정보를 보여줍니다.
 
-- **EnemySpawner**: 웨이브별 적 생성 패턴, 위치, 난이도 조절.
-- **EnemyAI**: 플레이어를 추적하는 간단한 이동 로직 및 충돌 대미지 처리.
-- **EnemyPool**: 퍼포먼스 최적화를 위한 객체 풀링(Object Pooling) 시스템 (수많은 적을 효율적으로 관리).
+- **`ExperienceBar.tsx`**: 경험치와 레벨 표시.
+- **`GameTimer.tsx`**: 생존 시간 표시.
+- **`KillCounter.tsx`**: 처치한 몬스터 수.
+- **`HealthBar.tsx`**: HP 표시.
+- **`InventoryHotbar.tsx`**: 획득 무기/아이템 아이콘 바.
 
-### **Weapon & Projectile (무기 및 투사체)**
+## 3. Game Entities (핵심 게임 객체)
 
-- **WeaponSystem**: 무기별 쿨타임, 공격 범위, 발사 로직 관리.
-- **Projectile**: 날아가는 투사체 또는 고정된 공격 영역의 생명주기 및 대미지 판정.
+이들은 Canvas 내부에서 움직이는 **'로직 컴포넌트'**입니다. 각각 독립적인 클래스나 데이터 구조로 정의하여 조립 가능하게 만듭니다.
 
-### **Pickups (아이템)**
+- **`PlayerEntity`**:
+  - 속성: 위치(x, y), 속도, 공격력, 획득 범위 등.
+  - 역할: 사용자 입력에 따라 움직이고, 주변의 아이템을 끌어당깁니다.
+- **`MonsterEntity`**:
+  - 속성: 타입(졸개, 보스), 체력, 이동 속도, 대미지.
+  - 역할: 플레이어를 향해 이동하고 충돌 시 대미지를 줍니다.
+- **`ProjectileEntity` (미사일/무기)**:
+  - 속성: 궤적, 관통 횟수, 공격력, 지속 시간.
+  - 역할: 플레이어 주변에서 생성되어 적을 향해 날아가거나 특정 영역을 공격합니다.
+- **`PickupEntity` (경험치/아이템)**:
+  - 속성: 경험치 양, 드랍 위치.
+  - 역할: 적 처치 시 생성되며 플레이어가 접근하면 플레이어에게 흡수됩니다.
 
-- **ExperienceGem**: 적 처치 시 드랍되는 경험치 보석.
-- **LootSystem**: 보물 상자, 회복 아이템, 골드 등의 생성 및 획득 처리.
+## 4. Game Graphics Container (그래픽 및 조립)
 
----
+위의 모든 엔티티들을 하나로 묶어 화면에 그리는 메인 컴포넌트입니다.
 
-## 3. Systems (게임 시스템)
+- **`GameCanvas.tsx`**:
+  - 모든 `Monster`, `Projectile`, `Player` 객체들을 배열로 관리합니다.
+  - 이 객체들을 돌면서 "움직여라", "화면에 그려라"라고 명령합니다. (조립의 핵심)
 
-엔티티 간의 상호작용과 게임 규칙을 처리하는 백엔드 로직입니다.
+## 5. Item Cards & Icons (UI 요소)
 
-- **CollisionSystem**: 적-플레이어, 적-투사체 간의 충돌 검사 (Spatial Partitioning 등을 이용한 최적화 필요).
-- **DamageSystem**: 대미지 계산, 크리티컬 판정, 넉백(Knockback) 효과 처리.
-- **LevelupSystem**: 경험치 획득에 따른 레벨업, 3가지 무기/강화 아이템 중 선택하는 UI 트리거.
-- **StatusEffectSystem**: 독, 빙결, 화상 등 지속 효과 관리.
-
----
-
-## 4. UI Components (사용자 인터페이스)
-
-사용자에게 정보를 전달하고 상호작용하는 레이어입니다.
-
-- **HUD (Heads-Up Display)**:
-  - 경험치 바 (XP Bar)
-  - 남은 시간 타이머
-  - 현재 킬 카운트
-  - 플레이어 HP 바
-- **LevelUpMenu**: 레벨업 시 나타나는 무기 선택 카드 UI.
-- **OverlayMenus**: 메인 메뉴, 설정, 일시정지, 게임 결과 리포트 화면.
+- **`UpgradeCard.tsx`**: 레벨업 화면의 개별 카드.
+- **`StatIcon.tsx`**: 스탯 표시용 아이콘.
 
 ---
 
-## 5. View & Rendering (렌더링)
+## 💡 조립 가이드 (Gemini에게 시킬 일):
 
-- **CanvasRenderer**: (성능을 위해 DOM 대신 Canvas 사용 권장) 모든 엔티티와 이펙트를 화면에 그리는 레이어.
-- **CameraSystem**: 플레이어를 중심으로 화면을 따라가는 카메라 로직.
+1. **"PlayerEntity와 MonsterEntity 간의 충돌 로직을 작성해줘"**
+2. **"GameCanvas에서 ProjectileEntity들을 관리하고 적과 맞으면 사라지게 해줘"**
+3. **"MonsterEntity가 죽을 때 그 자리에 PickupEntity를 생성해줘"**

@@ -1,0 +1,154 @@
+.upgrade-card {
+  position: relative;
+  width: 260px;
+  height: 380px;
+  background: rgba(25, 25, 35, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  backdrop-filter: blur(8px);
+  user-select: none;
+}
+
+.upgrade-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.upgrade-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  background: rgba(35, 35, 50, 0.95);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.card-inner {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.upgrade-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.upgrade-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.upgrade-name {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05rem;
+}
+
+.upgrade-rarity-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.1rem;
+  margin-top: 0.2rem;
+  opacity: 0.8;
+}
+
+.upgrade-description {
+  color: #ccc;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.upgrade-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-level {
+  font-size: 0.85rem;
+  color: #8b5cf6;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Rarity Styles */
+.rarity-common {
+  border-color: rgba(200, 200, 200, 0.3);
+}
+.rarity-common:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.rarity-rare {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+.rarity-rare:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+}
+.rarity-rare .upgrade-rarity-badge {
+  color: #3b82f6;
+}
+
+.rarity-epic {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.rarity-epic:hover {
+  border-color: #a855f7;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+.rarity-epic .upgrade-rarity-badge {
+  color: #a855f7;
+}
+
+/* Glint effect */
+.card-glint {
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: none;
+}
+
+.upgrade-card:hover .card-glint {
+  left: 150%;
+  transition: all 0.6s ease;
+}

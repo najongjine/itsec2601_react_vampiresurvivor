@@ -70,6 +70,7 @@
   margin: 0;
   background: linear-gradient(to bottom, #fff 20%, #8a2be2 80%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.5));
 }

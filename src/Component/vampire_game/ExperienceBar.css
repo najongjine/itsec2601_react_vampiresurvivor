@@ -1,0 +1,78 @@
+.xp-bar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  padding: 5px 0 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.xp-bar-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 15px;
+  margin-bottom: 2px;
+  font-family: "Outfit", sans-serif;
+  font-weight: bold;
+  font-size: 0.8rem;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+}
+
+.xp-level {
+  color: #00f2ff;
+}
+
+.xp-text {
+  opacity: 0.8;
+}
+
+.xp-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+  transition: width 0.3s cubic-bezier(0.1, 0.7, 1, 0.1);
+  position: relative;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+}
+
+.xp-bar-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  animation: xp-glow-move 2s infinite linear;
+}
+
+@keyframes xp-glow-move {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(500%);
+    opacity: 0;
+  }
+}

@@ -4,6 +4,7 @@ import StartScreen from "./Component/vampire_game/StartScreen";
 import LevelUpModal from "./Component/vampire_game/LevelUpModal";
 import PauseMenu from "./Component/vampire_game/PauseMenu";
 import GameOverReport from "./Component/vampire_game/GameOverReport";
+import ExperienceBar from "./Component/vampire_game/ExperienceBar";
 import { UpgradeInfo } from "./Component/vampire_game/UpgradeCard";
 
 /** 뱀파이어 서바이버 게임 */
@@ -47,6 +48,8 @@ function Game() {
     time: "00:00",
     level: 1,
     gold: 0,
+    currentXp: 0,
+    maxXp: 100,
   });
 
   // Keyboard shortcut for pausing
@@ -67,7 +70,14 @@ function Game() {
   }, [gameState]);
 
   const startGame = () => {
-    setGameStats({ kills: 0, time: "00:00", level: 1, gold: 0 });
+    setGameStats({
+      kills: 0,
+      time: "00:00",
+      level: 1,
+      gold: 0,
+      currentXp: 0,
+      maxXp: 100,
+    });
     setGameState("PLAYING");
   };
 
@@ -82,8 +92,32 @@ function Game() {
       time: "15:32",
       level: 24,
       gold: 450,
+      currentXp: 80,
+      maxXp: 2400,
     });
     setGameState("GAMEOVER");
+  };
+
+  const gainXp = (amount: number) => {
+    setGameStats((prev) => {
+      let nextXp = prev.currentXp + amount;
+      let nextLevel = prev.level;
+      let nextMaxXp = prev.maxXp;
+
+      if (nextXp >= nextMaxXp) {
+        nextXp -= nextMaxXp;
+        nextLevel += 1;
+        nextMaxXp = Math.floor(nextMaxXp * 1.2);
+        triggerLevelUp();
+      }
+
+      return {
+        ...prev,
+        currentXp: nextXp,
+        level: nextLevel,
+        maxXp: nextMaxXp,
+      };
+    });
   };
 
   const handleUpgradeSelect = (upgrade: UpgradeInfo) => {
@@ -105,7 +139,12 @@ function Game() {
 
       {gameState === "PLAYING" && (
         <div className="playing-area">
-          <header style={{ position: "absolute", top: "20px", right: "20px" }}>
+          <ExperienceBar
+            currentXp={gameStats.currentXp}
+            maxXp={gameStats.maxXp}
+            level={gameStats.level}
+          />
+          <header style={{ position: "absolute", top: "40px", right: "20px" }}>
             <button
               onClick={() => setGameState("PAUSED")}
               style={{
@@ -138,6 +177,19 @@ function Game() {
               }}
             >
               Simulate Level Up
+            </button>
+            <button
+              onClick={() => gainXp(20)}
+              style={{
+                padding: "10px 20px",
+                background: "#00d2ff",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Gain 20 XP
             </button>
             <button
               onClick={triggerGameOver}

@@ -4,9 +4,6 @@ import GlitchText from "./reactbits/GlitchText";
 function Header() {
   const items = [
     { label: "Calc", to: "/", color: "#3b82f6" },
-    { label: "Board", to: "/board", color: "#10b981" },
-    { label: "Register", to: "/register", color: "#f59e0b" },
-    { label: "Login", to: "/login", color: "#ef4444" },
     { label: "Game", to: "/game", color: "#8b5cf6" },
   ];
 

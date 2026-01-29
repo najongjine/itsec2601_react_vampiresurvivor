@@ -2,11 +2,13 @@ import React, { useEffect, useRef } from "react";
 import { PlayerEntity } from "./PlayerEntity";
 import { MonsterEntity } from "./MonsterEntity";
 import { ProjectileEntity } from "./ProjectileEntity";
+import { PickupEntity } from "./PickupEntity";
 
 interface GameCanvasProps {
   playerImageUrl?: string;
   onPlayerDamage: (amount: number) => void;
   onMonsterKill: () => void;
+  onGainXp: (amount: number) => void;
   level: number;
 }
 
@@ -14,6 +16,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   playerImageUrl,
   onPlayerDamage,
   onMonsterKill,
+  onGainXp,
   level,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,6 +25,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   );
   const monstersRef = useRef<MonsterEntity[]>([]);
   const projectilesRef = useRef<ProjectileEntity[]>([]);
+  const pickupsRef = useRef<PickupEntity[]>([]);
 
   const cameraRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef<Set<string>>(new Set());
@@ -149,6 +153,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
               projectile.onHit(monster);
               if (monster.isDead) {
                 onMonsterKill();
+                // 죽을 때 아이템 드랍
+                pickupsRef.current.push(
+                  new PickupEntity(monster.x, monster.y, 25),
+                );
               }
             }
           });
@@ -171,11 +179,25 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         });
 
+        // 아이템 업데이트 및 수집 검사
+        pickupsRef.current.forEach((pickup: PickupEntity) => {
+          pickup.update(
+            { x: playerRef.current.x, y: playerRef.current.y },
+            playerRef.current.stats.collectionRange,
+            deltaTime,
+          );
+
+          if (pickup.isCollected) {
+            onGainXp(pickup.xpValue);
+          }
+        });
+
         // 죽은 개체 정리
         monstersRef.current = monstersRef.current.filter((m) => !m.isDead);
         projectilesRef.current = projectilesRef.current.filter(
           (p) => !p.isExpired,
         );
+        pickupsRef.current = pickupsRef.current.filter((p) => !p.isCollected);
 
         // 화면 청소
         ctx.fillStyle = "#1a1a2e";
@@ -190,6 +212,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 
         monstersRef.current.forEach((m: MonsterEntity) => m.draw(ctx));
         projectilesRef.current.forEach((p: ProjectileEntity) => p.draw(ctx));
+        pickupsRef.current.forEach((p: PickupEntity) => p.draw(ctx));
         playerRef.current.draw(ctx);
 
         ctx.restore();

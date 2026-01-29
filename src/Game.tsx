@@ -259,6 +259,7 @@ function Game() {
               onMonsterKill={() =>
                 setGameStats((prev) => ({ ...prev, kills: prev.kills + 1 }))
               }
+              onGainXp={gainXp}
               level={gameStats.level}
             />
           </div>

@@ -253,7 +253,14 @@ function Game() {
           </header>
 
           <div style={{ marginTop: "60px" }}>
-            <GameCanvas playerImageUrl={playerImage} />
+            <GameCanvas
+              playerImageUrl={playerImage}
+              onPlayerDamage={changeHp}
+              onMonsterKill={() =>
+                setGameStats((prev) => ({ ...prev, kills: prev.kills + 1 }))
+              }
+              level={gameStats.level}
+            />
           </div>
 
           <div style={{ padding: "0 20px" }}>

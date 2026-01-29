@@ -1,19 +1,34 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { PlayerEntity } from "./PlayerEntity";
+import { MonsterEntity } from "./MonsterEntity";
+import { ProjectileEntity } from "./ProjectileEntity";
 
 interface GameCanvasProps {
   playerImageUrl?: string;
+  onPlayerDamage: (amount: number) => void;
+  onMonsterKill: () => void;
+  level: number;
 }
 
-const GameCanvas: React.FC<GameCanvasProps> = ({ playerImageUrl }) => {
+const GameCanvas: React.FC<GameCanvasProps> = ({
+  playerImageUrl,
+  onPlayerDamage,
+  onMonsterKill,
+  level,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<PlayerEntity>(
     new PlayerEntity(400, 300, {}, playerImageUrl),
   );
+  const monstersRef = useRef<MonsterEntity[]>([]);
+  const projectilesRef = useRef<ProjectileEntity[]>([]);
+
   const cameraRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef<Set<string>>(new Set());
   const requestRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
+  const spawnTimerRef = useRef<number>(0);
+  const fireTimerRef = useRef<number>(0);
 
   useEffect(() => {
     // 플레이어 이미지 업그레이드 (prop 변경 시)
@@ -35,6 +50,55 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ playerImageUrl }) => {
     };
   }, []);
 
+  const spawnMonster = (canvasWidth: number, canvasHeight: number) => {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.max(canvasWidth, canvasHeight) * 0.7;
+
+    const spawnX = playerRef.current.x + Math.cos(angle) * distance;
+    const spawnY = playerRef.current.y + Math.sin(angle) * distance;
+
+    const type = Math.random() > 0.9 ? "boss" : "minion";
+    monstersRef.current.push(new MonsterEntity(spawnX, spawnY, type, level));
+  };
+
+  const autoFire = () => {
+    if (monstersRef.current.length === 0) return;
+
+    // 가장 가까운 적 찾기
+    let closestMonster: MonsterEntity | null = null;
+    let minDist = Infinity;
+
+    monstersRef.current.forEach((monster) => {
+      const dx = monster.x - playerRef.current.x;
+      const dy = monster.y - playerRef.current.y;
+      const dist = dx * dx + dy * dy;
+      if (dist < minDist) {
+        minDist = dist;
+        closestMonster = monster;
+      }
+    });
+
+    if (closestMonster) {
+      const monster = closestMonster as MonsterEntity;
+      const dx = monster.x - playerRef.current.x;
+      const dy = monster.y - playerRef.current.y;
+      const angle = Math.atan2(dy, dx);
+      const speed = 400;
+
+      projectilesRef.current.push(
+        new ProjectileEntity(
+          playerRef.current.x,
+          playerRef.current.y,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed,
+          playerRef.current.stats.attackPower,
+          1, // 관통 1
+          2, // 수명 2초
+        ),
+      );
+    }
+  };
+
   const update = (time: number) => {
     if (lastTimeRef.current === 0) {
       lastTimeRef.current = time;
@@ -47,25 +111,87 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ playerImageUrl }) => {
     if (canvas) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        // 플레이어 업데이트 (월드 좌표)
+        // 플레이어 업데이트
         playerRef.current.update(keysRef.current, deltaTime);
 
-        // 카메라 업데이트 (플레이어를 화면 중앙에 위치시키기)
-        // 카메라의 x, y는 화면의 왼쪽 상단 구석의 월드 좌표가 됩니다.
+        // 카메라 업데이트
         cameraRef.current.x = playerRef.current.x - canvas.width / 2;
         cameraRef.current.y = playerRef.current.y - canvas.height / 2;
 
-        // 배경 청소
+        // 몬스터 스폰
+        spawnTimerRef.current += deltaTime;
+        if (spawnTimerRef.current > 1.2) {
+          spawnMonster(canvas.width, canvas.height);
+          spawnTimerRef.current = 0;
+        }
+
+        // 자동 발사 (1초마다)
+        fireTimerRef.current += deltaTime;
+        if (fireTimerRef.current > 1.0) {
+          autoFire();
+          fireTimerRef.current = 0;
+        }
+
+        // 투사체 업데이트 및 충돌 검사
+        projectilesRef.current.forEach((projectile) => {
+          projectile.update(deltaTime);
+
+          // 몬스터와 충돌 검사
+          monstersRef.current.forEach((monster) => {
+            if (monster.isDead) return;
+
+            const dx = projectile.x - monster.x;
+            const dy = projectile.y - monster.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const minDist = (projectile.size + monster.stats.size) / 2;
+
+            if (dist < minDist) {
+              projectile.onHit(monster);
+              if (monster.isDead) {
+                onMonsterKill();
+              }
+            }
+          });
+        });
+
+        // 몬스터 업데이트 및 플레이어 충돌 검사
+        monstersRef.current.forEach((monster: MonsterEntity) => {
+          monster.update(
+            { x: playerRef.current.x, y: playerRef.current.y },
+            deltaTime,
+          );
+
+          const dx = monster.x - playerRef.current.x;
+          const dy = monster.y - playerRef.current.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const minDist = (monster.stats.size + playerRef.current.width) / 2;
+
+          if (dist < minDist) {
+            onPlayerDamage(monster.stats.damage * deltaTime);
+          }
+        });
+
+        // 죽은 개체 정리
+        monstersRef.current = monstersRef.current.filter((m) => !m.isDead);
+        projectilesRef.current = projectilesRef.current.filter(
+          (p) => !p.isExpired,
+        );
+
+        // 화면 청소
         ctx.fillStyle = "#1a1a2e";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 격자 그리기 (무한 맵 느낌)
+        // 격자 그리기
         drawInfiniteGrid(ctx, canvas.width, canvas.height, cameraRef.current);
 
-        // 플레이어 그리기 (카메라 오프셋 적용)
+        // 개체들 그리기
         ctx.save();
         ctx.translate(-cameraRef.current.x, -cameraRef.current.y);
+
+        monstersRef.current.forEach((m: MonsterEntity) => m.draw(ctx));
+        projectilesRef.current.forEach((p: ProjectileEntity) => p.draw(ctx));
         playerRef.current.draw(ctx);
+
         ctx.restore();
       }
     }

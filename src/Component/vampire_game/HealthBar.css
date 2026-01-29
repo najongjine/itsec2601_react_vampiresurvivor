@@ -1,0 +1,78 @@
+.health-bar-container {
+  position: absolute;
+  top: 45px;
+  left: 20px;
+  width: 180px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 90;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.health-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.health-icon {
+  font-size: 1rem;
+  filter: drop-shadow(0 0 5px rgba(255, 50, 50, 0.8));
+}
+
+.health-text {
+  font-family: "Outfit", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 1);
+}
+
+.health-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4b2b 0%, #ff416c 100%);
+  transition: width 0.3s ease-out;
+  border-radius: 4px;
+  position: relative;
+}
+
+.health-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+
+/* Low health pulsing effect */
+.health-bar-container.low {
+  border-color: rgba(255, 0, 0, 0.5);
+  animation: health-pulse 1s infinite alternate;
+}
+
+@keyframes health-pulse {
+  0% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+  }
+}

@@ -7,6 +7,9 @@ import GameOverReport from "./Component/vampire_game/GameOverReport";
 import ExperienceBar from "./Component/vampire_game/ExperienceBar";
 import GameTimer from "./Component/vampire_game/GameTimer";
 import KillCounter from "./Component/vampire_game/KillCounter";
+import HealthBar from "./Component/vampire_game/HealthBar";
+import InventoryHotbar from "./Component/vampire_game/InventoryHotbar";
+import GameCanvas from "./Component/vampire_game/GameCanvas";
 import { UpgradeInfo } from "./Component/vampire_game/UpgradeCard";
 
 /** 뱀파이어 서바이버 게임 */
@@ -26,6 +29,7 @@ function Game() {
       description: "Shoots a fireball at the nearest enemy.",
       level: 1,
       rarity: "common",
+      type: "weapon",
     },
     {
       id: "shield",
@@ -34,6 +38,7 @@ function Game() {
       description: "Creates a protective barrier around you.",
       level: 0,
       rarity: "rare",
+      type: "passive",
     },
     {
       id: "speed",
@@ -42,8 +47,17 @@ function Game() {
       description: "Increases movement speed significantly.",
       level: 2,
       rarity: "epic",
+      type: "passive",
     },
   ];
+
+  const [inventory, setInventory] = useState<{
+    weapons: UpgradeInfo[];
+    passives: UpgradeInfo[];
+  }>({
+    weapons: [],
+    passives: [],
+  });
 
   const [gameStats, setGameStats] = useState({
     kills: 0,
@@ -53,7 +67,11 @@ function Game() {
     currentXp: 0,
     maxXp: 100,
     totalSeconds: 0,
+    currentHp: 100,
+    maxHp: 100,
   });
+
+  const [playerImage, setPlayerImage] = useState<string | undefined>(undefined);
 
   // Keyboard shortcut for pausing
   useEffect(() => {
@@ -90,6 +108,18 @@ function Game() {
     };
   }, [gameState]);
 
+  // Damage/Heal simulator
+  const changeHp = (amount: number) => {
+    setGameStats((prev) => {
+      const nextHp = Math.max(0, Math.min(prev.currentHp + amount, prev.maxHp));
+      if (nextHp === 0) {
+        // Trigger game over if HP reaches 0
+        triggerGameOver();
+      }
+      return { ...prev, currentHp: nextHp };
+    });
+  };
+
   const startGame = () => {
     setGameStats({
       kills: 0,
@@ -99,7 +129,10 @@ function Game() {
       currentXp: 0,
       maxXp: 100,
       totalSeconds: 0,
+      currentHp: 100,
+      maxHp: 100,
     });
+    setInventory({ weapons: [], passives: [] });
     setGameState("PLAYING");
   };
 
@@ -116,7 +149,9 @@ function Game() {
       gold: 450,
       currentXp: 80,
       maxXp: 2400,
-      totalSeconds: 932, // Example value for game over
+      totalSeconds: 932,
+      currentHp: 0,
+      maxHp: 200,
     });
     setGameState("GAMEOVER");
   };
@@ -145,6 +180,33 @@ function Game() {
 
   const handleUpgradeSelect = (upgrade: UpgradeInfo) => {
     console.log("Selected upgrade:", upgrade.name);
+
+    setInventory((prev) => {
+      const typeKey = upgrade.type === "weapon" ? "weapons" : "passives";
+      const existingItemIndex = prev[typeKey].findIndex(
+        (item) => item.id === upgrade.id,
+      );
+
+      const newItems = [...prev[typeKey]];
+      if (existingItemIndex > -1) {
+        // Level up existing item
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          level: newItems[existingItemIndex].level + 1,
+        };
+      } else {
+        // Add new item if slot available
+        if (newItems.length < 6) {
+          newItems.push({ ...upgrade, level: upgrade.level + 1 });
+        }
+      }
+
+      return {
+        ...prev,
+        [typeKey]: newItems,
+      };
+    });
+
     setGameState("PLAYING");
   };
 
@@ -169,6 +231,11 @@ function Game() {
           />
           <GameTimer totalSeconds={gameStats.totalSeconds} />
           <KillCounter kills={gameStats.kills} />
+          <HealthBar currentHp={gameStats.currentHp} maxHp={gameStats.maxHp} />
+          <InventoryHotbar
+            weapons={inventory.weapons}
+            passives={inventory.passives}
+          />
           <header style={{ position: "absolute", top: "40px", right: "20px" }}>
             <button
               onClick={() => setGameState("PAUSED")}
@@ -185,8 +252,31 @@ function Game() {
             </button>
           </header>
 
-          <h1>Game Started!</h1>
-          <p style={{ color: "#aaa" }}>Press [ESC] to pause</p>
+          <div style={{ marginTop: "60px" }}>
+            <GameCanvas playerImageUrl={playerImage} />
+          </div>
+
+          <div style={{ padding: "0 20px" }}>
+            <p style={{ color: "#aaa", margin: "10px 0" }}>
+              Press [ESC] to pause | Use WASD to move
+            </p>
+            <div style={{ marginBottom: "10px" }}>
+              <label style={{ color: "white", marginRight: "10px" }}>
+                Character Image URL:
+              </label>
+              <input
+                type="text"
+                placeholder="https://example.com/char.png"
+                onBlur={(e) => setPlayerImage(e.target.value)}
+                style={{
+                  background: "#222",
+                  color: "white",
+                  border: "1px solid #444",
+                  padding: "5px",
+                }}
+              />
+            </div>
+          </div>
 
           <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
             <button onClick={() => setGameState("START")}>Back to Menu</button>
@@ -230,6 +320,32 @@ function Game() {
               }}
             >
               Kill Monster
+            </button>
+            <button
+              onClick={() => changeHp(-10)}
+              style={{
+                padding: "10px 20px",
+                background: "#ff4b2b",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Take Damage
+            </button>
+            <button
+              onClick={() => changeHp(10)}
+              style={{
+                padding: "10px 20px",
+                background: "#4caf50",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Heal
             </button>
             <button
               onClick={triggerGameOver}

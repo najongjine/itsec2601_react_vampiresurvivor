@@ -8,6 +8,7 @@ export interface UpgradeInfo {
   level: number;
   icon: string;
   rarity: "common" | "rare" | "epic";
+  type: "weapon" | "passive";
 }
 
 interface UpgradeCardProps {

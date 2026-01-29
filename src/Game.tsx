@@ -5,6 +5,8 @@ import LevelUpModal from "./Component/vampire_game/LevelUpModal";
 import PauseMenu from "./Component/vampire_game/PauseMenu";
 import GameOverReport from "./Component/vampire_game/GameOverReport";
 import ExperienceBar from "./Component/vampire_game/ExperienceBar";
+import GameTimer from "./Component/vampire_game/GameTimer";
+import KillCounter from "./Component/vampire_game/KillCounter";
 import { UpgradeInfo } from "./Component/vampire_game/UpgradeCard";
 
 /** 뱀파이어 서바이버 게임 */
@@ -50,6 +52,7 @@ function Game() {
     gold: 0,
     currentXp: 0,
     maxXp: 100,
+    totalSeconds: 0,
   });
 
   // Keyboard shortcut for pausing
@@ -69,6 +72,24 @@ function Game() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gameState]);
 
+  // Survival Timer Logic
+  useEffect(() => {
+    let interval: number | undefined;
+
+    if (gameState === "PLAYING") {
+      interval = setInterval(() => {
+        setGameStats((prev) => ({
+          ...prev,
+          totalSeconds: prev.totalSeconds + 1,
+        }));
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [gameState]);
+
   const startGame = () => {
     setGameStats({
       kills: 0,
@@ -77,6 +98,7 @@ function Game() {
       gold: 0,
       currentXp: 0,
       maxXp: 100,
+      totalSeconds: 0,
     });
     setGameState("PLAYING");
   };
@@ -94,6 +116,7 @@ function Game() {
       gold: 450,
       currentXp: 80,
       maxXp: 2400,
+      totalSeconds: 932, // Example value for game over
     });
     setGameState("GAMEOVER");
   };
@@ -144,6 +167,8 @@ function Game() {
             maxXp={gameStats.maxXp}
             level={gameStats.level}
           />
+          <GameTimer totalSeconds={gameStats.totalSeconds} />
+          <KillCounter kills={gameStats.kills} />
           <header style={{ position: "absolute", top: "40px", right: "20px" }}>
             <button
               onClick={() => setGameState("PAUSED")}
@@ -190,6 +215,21 @@ function Game() {
               }}
             >
               Gain 20 XP
+            </button>
+            <button
+              onClick={() =>
+                setGameStats((prev) => ({ ...prev, kills: prev.kills + 1 }))
+              }
+              style={{
+                padding: "10px 20px",
+                background: "#ff3333",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Kill Monster
             </button>
             <button
               onClick={triggerGameOver}

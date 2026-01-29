@@ -1,0 +1,36 @@
+.game-timer-container {
+  position: absolute;
+  top: 45px; /* ExperienceBar height + margin */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 5px 20px;
+  border-radius: 0 0 15px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: none;
+  z-index: 90;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  min-width: 80px;
+  text-align: center;
+}
+
+.game-timer-text {
+  font-family: "Outfit", "Roboto Mono", monospace;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+  letter-spacing: 2px;
+}
+
+.game-timer-container::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00f2ff, transparent);
+  opacity: 0.5;
+}

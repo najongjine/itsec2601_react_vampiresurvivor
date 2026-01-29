@@ -1,0 +1,50 @@
+.kill-counter-container {
+  position: absolute;
+  top: 45px; /* Same as Timer for alignment */
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 5px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 50, 50, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 90;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.kill-counter-container:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 50, 50, 0.5);
+}
+
+.kill-icon {
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 5px rgba(255, 50, 50, 0.8));
+  animation: kill-pulse 2s infinite ease-in-out;
+}
+
+.kill-count {
+  font-family: "Outfit", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+}
+
+@keyframes kill-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}

@@ -7,6 +7,8 @@ gameplan.md 에 vampire survivor 게임의 구성 요소들을 프로그래밍�
 
 --------------
 
+내가 react 에서 vampire 서비이벌 게임을 만들고 싶어.
+gameplan.md
 여기에 뱀파이어 서바이버 게임 만들때 필요한거 구상해 봤어.
 
 Component/vampire_game 안에 

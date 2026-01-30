@@ -9,6 +9,7 @@ import { UpgradeInfo } from "./UpgradeCard";
 interface GameCanvasProps {
   playerImageUrl?: string;
   mapImageUrl?: string;
+  monsterImages?: Record<string, string>; // { bat: "url", zombie: "url", ... }
   onPlayerDamage: (amount: number) => void;
   onMonsterKill: () => void;
   onGainXp: (amount: number) => void;
@@ -19,6 +20,7 @@ interface GameCanvasProps {
 const GameCanvas: React.FC<GameCanvasProps> = ({
   playerImageUrl,
   mapImageUrl,
+  monsterImages,
   onPlayerDamage,
   onMonsterKill,
   onGainXp,
@@ -105,8 +107,28 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     const spawnX = playerRef.current.x + Math.cos(angle) * distance;
     const spawnY = playerRef.current.y + Math.sin(angle) * distance;
 
-    const type = Math.random() > 0.9 ? "boss" : "minion";
-    monstersRef.current.push(new MonsterEntity(spawnX, spawnY, type, level));
+    // 몬스터 타입 결정 logic
+    let type: any = "bat";
+    const rand = Math.random();
+
+    if (level >= 10 && rand > 0.98) {
+      type = "golem";
+    } else if (level >= 7 && rand > 0.95) {
+      type = "mantis";
+    } else if (level >= 5 && rand > 0.85) {
+      type = "werewolf";
+    } else if (level >= 3 && rand > 0.7) {
+      type = "dracula";
+    } else if (level >= 2 && rand > 0.5) {
+      type = "zombie";
+    } else {
+      type = rand > 0.95 ? "zombie" : "bat";
+    }
+
+    const imageUrl = monsterImages ? monsterImages[type] : undefined;
+    monstersRef.current.push(
+      new MonsterEntity(spawnX, spawnY, type, level, imageUrl),
+    );
   };
 
   const autoFire = () => {

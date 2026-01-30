@@ -46,6 +46,9 @@ function Game() {
     playerIdleImg,
   );
   const [mapImage, setMapImage] = useState<string | undefined>(undefined);
+  const [monsterImages, setMonsterImages] = useState<Record<string, string>>(
+    {},
+  );
 
   // Keyboard shortcut for pausing
   useEffect(() => {
@@ -278,6 +281,7 @@ function Game() {
             <GameCanvas
               playerImageUrl={playerImage}
               mapImageUrl={mapImage}
+              monsterImages={monsterImages}
               onPlayerDamage={changeHp}
               onMonsterKill={() =>
                 setGameStats((prev) => ({ ...prev, kills: prev.kills + 1 }))
@@ -379,6 +383,66 @@ function Game() {
                     width: "300px",
                   }}
                 />
+              </div>
+              <div style={{ marginTop: "10px" }}>
+                <p
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    marginBottom: "5px",
+                  }}
+                >
+                  Monster Images (URLs):
+                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "5px",
+                  }}
+                >
+                  {[
+                    "bat",
+                    "zombie",
+                    "dracula",
+                    "werewolf",
+                    "mantis",
+                    "golem",
+                  ].map((type) => (
+                    <div key={type}>
+                      <label
+                        style={{
+                          color: "#aaa",
+                          fontSize: "12px",
+                          display: "block",
+                        }}
+                      >
+                        {type.toUpperCase()}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Image URL"
+                        onBlur={(e) => {
+                          const url = e.target.value;
+                          if (url) {
+                            setMonsterImages((prev) => ({
+                              ...prev,
+                              [type]: url,
+                            }));
+                          }
+                        }}
+                        style={{
+                          background: "#222",
+                          color: "white",
+                          border: "1px solid #444",
+                          padding: "3px",
+                          width: "140px",
+                          fontSize: "12px",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

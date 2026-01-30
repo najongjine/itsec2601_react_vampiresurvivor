@@ -17,8 +17,9 @@ export class PlayerEntity {
   y: number;
   stats: PlayerStats;
   image: HTMLImageElement | null = null;
-  width: number = 40;
-  height: number = 40;
+  width: number = 49;
+  height: number = 66;
+  facingRight: boolean = true;
 
   constructor(
     x: number,
@@ -67,12 +68,14 @@ export class PlayerEntity {
     if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) dx -= 1;
     if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) dx += 1;
 
-    // 대각선 이동 시 속도 일정하게 유지 (정규화)
     if (dx !== 0 && dy !== 0) {
       const length = Math.sqrt(dx * dx + dy * dy);
       dx /= length;
       dy /= length;
     }
+
+    if (dx > 0) this.facingRight = true;
+    else if (dx < 0) this.facingRight = false;
 
     this.x += dx * this.stats.speed * deltaTime;
     this.y += dy * this.stats.speed * deltaTime;
@@ -86,6 +89,11 @@ export class PlayerEntity {
 
     // 플레이어 중심을 기준으로 이동
     ctx.translate(this.x, this.y);
+
+    // 좌우 반전 처리
+    if (!this.facingRight) {
+      ctx.scale(-1, 1);
+    }
 
     if (this.image && this.image.complete) {
       // 이미지가 있으면 이미지 출력
@@ -117,6 +125,7 @@ export class PlayerEntity {
       // 캐릭터처럼 보이게 눈 추가
       ctx.fillStyle = "white";
       ctx.beginPath();
+      // 반전 여부에 관계없이 눈 위치 고정 (또는 필요에 따라 조정)
       ctx.arc(-10, -5, 4, 0, Math.PI * 2);
       ctx.arc(10, -5, 4, 0, Math.PI * 2);
       ctx.fill();

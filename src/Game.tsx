@@ -11,6 +11,7 @@ import HealthBar from "./Component/vampire_game/HealthBar";
 import InventoryHotbar from "./Component/vampire_game/InventoryHotbar";
 import GameCanvas from "./Component/vampire_game/GameCanvas";
 import { UpgradeInfo } from "./Component/vampire_game/UpgradeCard";
+import playerIdleImg from "./assets/player_idle1.png";
 
 /** 뱀파이어 서바이버 게임 */
 function Game() {
@@ -20,36 +21,6 @@ function Game() {
   const [prevGameState, setPrevGameState] = useState<
     "START" | "PLAYING" | "LEVEL_UP" | "PAUSED" | "GAMEOVER"
   >("START");
-
-  const dummyUpgrades: UpgradeInfo[] = [
-    {
-      id: "fireball",
-      name: "Fireball",
-      icon: "🔥",
-      description: "Shoots a fireball at the nearest enemy.",
-      level: 1,
-      rarity: "common",
-      type: "weapon",
-    },
-    {
-      id: "shield",
-      name: "Magic Shield",
-      icon: "🛡️",
-      description: "Creates a protective barrier around you.",
-      level: 0,
-      rarity: "rare",
-      type: "passive",
-    },
-    {
-      id: "speed",
-      name: "Haste",
-      icon: "⚡",
-      description: "Increases movement speed significantly.",
-      level: 2,
-      rarity: "epic",
-      type: "passive",
-    },
-  ];
 
   const [inventory, setInventory] = useState<{
     weapons: UpgradeInfo[];
@@ -71,7 +42,10 @@ function Game() {
     maxHp: 100,
   });
 
-  const [playerImage, setPlayerImage] = useState<string | undefined>(undefined);
+  const [playerImage, setPlayerImage] = useState<string | undefined>(
+    playerIdleImg,
+  );
+  const [mapImage, setMapImage] = useState<string | undefined>(undefined);
 
   // Keyboard shortcut for pausing
   useEffect(() => {
@@ -136,11 +110,6 @@ function Game() {
     setGameState("PLAYING");
   };
 
-  const triggerLevelUp = () => {
-    setPrevGameState(gameState);
-    setGameState("LEVEL_UP");
-  };
-
   const triggerGameOver = () => {
     setGameStats({
       kills: 124,
@@ -178,36 +147,117 @@ function Game() {
     });
   };
 
+  const [upgrades, setUpgrades] = useState<UpgradeInfo[]>([]);
+
   const handleUpgradeSelect = (upgrade: UpgradeInfo) => {
     console.log("Selected upgrade:", upgrade.name);
 
-    setInventory((prev) => {
-      const typeKey = upgrade.type === "weapon" ? "weapons" : "passives";
-      const existingItemIndex = prev[typeKey].findIndex(
-        (item) => item.id === upgrade.id,
-      );
+    if (upgrade.type === "weapon" || upgrade.type === "passive") {
+      setInventory((prev) => {
+        const typeKey = upgrade.type === "weapon" ? "weapons" : "passives";
+        const existingItemIndex = prev[typeKey].findIndex(
+          (item) => item.id === upgrade.id,
+        );
 
-      const newItems = [...prev[typeKey]];
-      if (existingItemIndex > -1) {
-        // Level up existing item
-        newItems[existingItemIndex] = {
-          ...newItems[existingItemIndex],
-          level: newItems[existingItemIndex].level + 1,
-        };
-      } else {
-        // Add new item if slot available
-        if (newItems.length < 6) {
-          newItems.push({ ...upgrade, level: upgrade.level + 1 });
+        const newItems = [...prev[typeKey]];
+        if (existingItemIndex > -1) {
+          newItems[existingItemIndex] = {
+            ...newItems[existingItemIndex],
+            level: newItems[existingItemIndex].level + 1,
+          };
+        } else if (newItems.length < 6) {
+          newItems.push({ ...upgrade, level: 1 });
         }
-      }
-
-      return {
-        ...prev,
-        [typeKey]: newItems,
-      };
-    });
+        return { ...prev, [typeKey]: newItems };
+      });
+    } else {
+      // 스탯 업그레이드 처리
+      setGameStats((prev) => {
+        const next = { ...prev };
+        switch (upgrade.id) {
+          case "speed_boost":
+            // PlayerEntity 스탯은 GameCanvas 내부에서 관리되므로
+            // 실제로는 playerRef를 업데이트해야 함.
+            // 여기서는 UI용 stats만 업데이트하고 GameCanvas에 prop으로 전달하도록 구조 변경 필요
+            break;
+          case "damage_boost":
+            break;
+          case "hp_boost":
+            next.maxHp += 20;
+            next.currentHp = Math.min(next.currentHp + 50, next.maxHp);
+            break;
+        }
+        return next;
+      });
+    }
 
     setGameState("PLAYING");
+  };
+
+  const triggerLevelUp = () => {
+    // 무작위 업그레이드 3개 선택
+    const allPossibleUpgrades: UpgradeInfo[] = [
+      {
+        id: "flamethrower",
+        name: "Flamethrower",
+        icon: "🔥",
+        description: "Burn them all!",
+        level: 0,
+        rarity: "common",
+        type: "weapon",
+      },
+      {
+        id: "bible",
+        name: "Rotating Bible",
+        icon: "📖",
+        description: "Holy protection.",
+        level: 0,
+        rarity: "rare",
+        type: "weapon",
+      },
+      {
+        id: "pidgeon",
+        name: "Pidgeon",
+        icon: "🕊️",
+        description: "Air support.",
+        level: 0,
+        rarity: "epic",
+        type: "weapon",
+      },
+      {
+        id: "speed_boost",
+        name: "Speed Up",
+        icon: "👢",
+        description: "Move faster.",
+        level: 0,
+        rarity: "common",
+        type: "stat",
+      },
+      {
+        id: "damage_boost",
+        name: "Damage Up",
+        icon: "⚔️",
+        description: "Hit harder.",
+        level: 0,
+        rarity: "common",
+        type: "stat",
+      },
+      {
+        id: "hp_boost",
+        name: "HP Up",
+        icon: "❤️",
+        description: "More health.",
+        level: 0,
+        rarity: "common",
+        type: "stat",
+      },
+    ];
+
+    const shuffled = allPossibleUpgrades.sort(() => 0.5 - Math.random());
+    setUpgrades(shuffled.slice(0, 3));
+
+    setPrevGameState(gameState);
+    setGameState("LEVEL_UP");
   };
 
   const resumeGame = () => {
@@ -224,65 +274,112 @@ function Game() {
 
       {gameState === "PLAYING" && (
         <div className="playing-area">
-          <ExperienceBar
-            currentXp={gameStats.currentXp}
-            maxXp={gameStats.maxXp}
-            level={gameStats.level}
-          />
-          <GameTimer totalSeconds={gameStats.totalSeconds} />
-          <KillCounter kills={gameStats.kills} />
-          <HealthBar currentHp={gameStats.currentHp} maxHp={gameStats.maxHp} />
-          <InventoryHotbar
-            weapons={inventory.weapons}
-            passives={inventory.passives}
-          />
-          <header style={{ position: "absolute", top: "40px", right: "20px" }}>
-            <button
-              onClick={() => setGameState("PAUSED")}
-              style={{
-                background: "rgba(255,255,255,0.1)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.2)",
-                padding: "5px 15px",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-            >
-              PAUSE
-            </button>
-          </header>
-
-          <div style={{ marginTop: "60px" }}>
+          <div className="game-world-container">
             <GameCanvas
               playerImageUrl={playerImage}
+              mapImageUrl={mapImage}
               onPlayerDamage={changeHp}
               onMonsterKill={() =>
                 setGameStats((prev) => ({ ...prev, kills: prev.kills + 1 }))
               }
               onGainXp={gainXp}
               level={gameStats.level}
+              selectedWeapons={inventory.weapons}
             />
+
+            <div className="hud-overlay">
+              <div className="experience-bar-container">
+                <ExperienceBar
+                  currentXp={gameStats.currentXp}
+                  maxXp={gameStats.maxXp}
+                  level={gameStats.level}
+                />
+              </div>
+
+              <div className="top-left-hud">
+                <HealthBar
+                  currentHp={gameStats.currentHp}
+                  maxHp={gameStats.maxHp}
+                />
+                <InventoryHotbar
+                  weapons={inventory.weapons}
+                  passives={inventory.passives}
+                />
+              </div>
+
+              <div className="top-center-hud">
+                <GameTimer totalSeconds={gameStats.totalSeconds} />
+              </div>
+
+              <div className="top-right-hud">
+                <KillCounter kills={gameStats.kills} />
+              </div>
+
+              <div className="pause-button-container">
+                <button
+                  onClick={() => setGameState("PAUSED")}
+                  style={{
+                    background: "rgba(255,255,255,0.1)",
+                    color: "white",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    padding: "5px 15px",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                >
+                  PAUSE
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div style={{ padding: "0 20px" }}>
+          <div className="footer-controls" style={{ padding: "0 20px" }}>
             <p style={{ color: "#aaa", margin: "10px 0" }}>
               Press [ESC] to pause | Use WASD to move
             </p>
-            <div style={{ marginBottom: "10px" }}>
-              <label style={{ color: "white", marginRight: "10px" }}>
-                Character Image URL:
-              </label>
-              <input
-                type="text"
-                placeholder="https://example.com/char.png"
-                onBlur={(e) => setPlayerImage(e.target.value)}
-                style={{
-                  background: "#222",
-                  color: "white",
-                  border: "1px solid #444",
-                  padding: "5px",
-                }}
-              />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                marginBottom: "20px",
+              }}
+            >
+              <div>
+                <label style={{ color: "white", marginRight: "10px" }}>
+                  Character Image URL:
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/char.png"
+                  onBlur={(e) => setPlayerImage(e.target.value)}
+                  style={{
+                    background: "#222",
+                    color: "white",
+                    border: "1px solid #444",
+                    padding: "5px",
+                    width: "300px",
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ color: "white", marginRight: "10px" }}>
+                  Map Image URL:
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/map.png"
+                  onBlur={(e) => setMapImage(e.target.value)}
+                  style={{
+                    background: "#222",
+                    color: "white",
+                    border: "1px solid #444",
+                    padding: "5px",
+                    width: "300px",
+                  }}
+                />
+              </div>
             </div>
           </div>
 
@@ -373,7 +470,7 @@ function Game() {
       )}
 
       {gameState === "LEVEL_UP" && (
-        <LevelUpModal upgrades={dummyUpgrades} onSelect={handleUpgradeSelect} />
+        <LevelUpModal upgrades={upgrades} onSelect={handleUpgradeSelect} />
       )}
 
       {gameState === "PAUSED" && (

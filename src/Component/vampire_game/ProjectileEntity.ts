@@ -1,4 +1,7 @@
 import { MonsterEntity } from "./MonsterEntity";
+import { PlayerEntity } from "./PlayerEntity";
+
+export type ProjectileType = "LINEAR" | "ORBITAL" | "FLAME" | "AREA";
 
 /**
  * 뱀파이어 서바이버 게임의 투사체(무기) 엔티티
@@ -13,8 +16,15 @@ export class ProjectileEntity {
   lifeTime: number; // 초 단위
   size: number = 10;
   color: string = "#00d2ff";
-  hitMonsters: Set<MonsterEntity> = new Set(); // 이미 맞은 몬스터 중복 데미지 방지
+  hitMonsters: Set<MonsterEntity> = new Set();
   isExpired: boolean = false;
+
+  // 특수 투사체 관련
+  type: ProjectileType;
+  owner?: PlayerEntity;
+  angle: number = 0;
+  distance: number = 0;
+  orbitSpeed: number = 0;
 
   constructor(
     x: number,
@@ -24,6 +34,15 @@ export class ProjectileEntity {
     damage: number = 10,
     penetration: number = 1,
     lifeTime: number = 2,
+    type: ProjectileType = "LINEAR",
+    options?: {
+      size?: number;
+      color?: string;
+      owner?: PlayerEntity;
+      distance?: number;
+      orbitSpeed?: number;
+      angle?: number;
+    },
   ) {
     this.x = x;
     this.y = y;
@@ -32,61 +51,89 @@ export class ProjectileEntity {
     this.damage = damage;
     this.penetration = penetration;
     this.lifeTime = lifeTime;
-  }
+    this.type = type;
 
-  /**
-   * 투사체의 위치를 업데이트하고 수명을 체크합니다.
-   */
-  update(deltaTime: number) {
-    this.x += this.vx * deltaTime;
-    this.y += this.vy * deltaTime;
-    this.lifeTime -= deltaTime;
-
-    if (this.lifeTime <= 0) {
-      this.isExpired = true;
+    if (options) {
+      if (options.size) this.size = options.size;
+      if (options.color) this.color = options.color;
+      this.owner = options.owner;
+      this.distance = options.distance || 0;
+      this.orbitSpeed = options.orbitSpeed || 0;
+      this.angle = options.angle || 0;
     }
   }
 
-  /**
-   * 몬스터와 충돌했을 때 호출됩니다.
-   */
+  update(deltaTime: number) {
+    this.lifeTime -= deltaTime;
+    if (this.lifeTime <= 0) {
+      this.isExpired = true;
+      return;
+    }
+
+    if (this.type === "ORBITAL" && this.owner) {
+      // 플레이어 주변을 회전
+      this.angle += this.orbitSpeed * deltaTime;
+      this.x = this.owner.x + Math.cos(this.angle) * this.distance;
+      this.y = this.owner.y + Math.sin(this.angle) * this.distance;
+    } else {
+      // 일반 직선 이동
+      this.x += this.vx * deltaTime;
+      this.y += this.vy * deltaTime;
+    }
+  }
+
   onHit(monster: MonsterEntity) {
     if (this.hitMonsters.has(monster)) return false;
 
     this.hitMonsters.add(monster);
     monster.takeDamage(this.damage);
-    this.penetration -= 1;
 
-    if (this.penetration <= 0) {
-      this.isExpired = true;
+    // FLAME타입은 관통이 무한하거나 매우 높음
+    if (this.type !== "FLAME") {
+      this.penetration -= 1;
+      if (this.penetration <= 0) {
+        this.isExpired = true;
+      }
     }
     return true;
   }
 
-  /**
-   * 투사체를 그립니다.
-   */
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.translate(this.x, this.y);
 
-    // 빛나는 효과
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = this.color;
+    if (this.type === "FLAME") {
+      // 화염 연출
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+      gradient.addColorStop(0, "rgba(255, 100, 0, 1)");
+      gradient.addColorStop(1, "rgba(255, 0, 0, 0)");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = this.color;
+      ctx.fillStyle = this.color;
 
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
-    ctx.fill();
+      if (this.type === "ORBITAL") {
+        // 성경 같은 모양
+        ctx.rotate(this.angle + Math.PI / 2);
+        ctx.fillRect(-this.size / 2, -this.size, this.size, this.size * 2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
 
-    // 꼬리 효과 (간단하게)
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(-this.vx * 0.05, -this.vy * 0.05);
-    ctx.lineWidth = this.size;
-    ctx.strokeStyle = this.color;
-    ctx.stroke();
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-this.vx * 0.05, -this.vy * 0.05);
+        ctx.lineWidth = this.size / 2;
+        ctx.strokeStyle = this.color;
+        ctx.stroke();
+      }
+    }
 
     ctx.restore();
   }

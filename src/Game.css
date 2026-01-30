@@ -1,0 +1,80 @@
+.game-world-container {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  border: 4px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Hide the duplicate border in GameCanvas if necessary, or let container handle it */
+.game-world-container canvas {
+  display: block;
+}
+
+.hud-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Let clicks pass through to canvas if needed, or override for specific buttons */
+}
+
+.hud-overlay > * {
+  pointer-events: auto; /* Re-enable clicks for actual HUD elements */
+}
+
+/* Experience Bar at the very top */
+.experience-bar-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;
+}
+
+/* Health and Inventory at top left */
+.top-left-hud {
+  position: absolute;
+  top: 30px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+}
+
+/* Timer at top center */
+.top-center-hud {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* Kill counter at top right */
+.top-right-hud {
+  position: absolute;
+  top: 30px;
+  right: 10px;
+  z-index: 10;
+}
+
+/* Pause button */
+.pause-button-container {
+  position: absolute;
+  top: 80px;
+  right: 10px;
+  z-index: 10;
+}
+
+.playing-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}

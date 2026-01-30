@@ -3,21 +3,27 @@ import { PlayerEntity } from "./PlayerEntity";
 import { MonsterEntity } from "./MonsterEntity";
 import { ProjectileEntity } from "./ProjectileEntity";
 import { PickupEntity } from "./PickupEntity";
+import { Weapon, WEAPON_CONFIGS } from "./WeaponManager";
+import { UpgradeInfo } from "./UpgradeCard";
 
 interface GameCanvasProps {
   playerImageUrl?: string;
+  mapImageUrl?: string;
   onPlayerDamage: (amount: number) => void;
   onMonsterKill: () => void;
   onGainXp: (amount: number) => void;
   level: number;
+  selectedWeapons: UpgradeInfo[];
 }
 
 const GameCanvas: React.FC<GameCanvasProps> = ({
   playerImageUrl,
+  mapImageUrl,
   onPlayerDamage,
   onMonsterKill,
   onGainXp,
   level,
+  selectedWeapons,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef<PlayerEntity>(
@@ -26,6 +32,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const monstersRef = useRef<MonsterEntity[]>([]);
   const projectilesRef = useRef<ProjectileEntity[]>([]);
   const pickupsRef = useRef<PickupEntity[]>([]);
+  const weaponsRef = useRef<Weapon[]>([new Weapon(WEAPON_CONFIGS.dagger)]);
 
   const cameraRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef<Set<string>>(new Set());
@@ -33,6 +40,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const lastTimeRef = useRef<number>(0);
   const spawnTimerRef = useRef<number>(0);
   const fireTimerRef = useRef<number>(0);
+  const mapImageRef = useRef<HTMLImageElement | null>(null);
+  const mapPatternRef = useRef<CanvasPattern | null>(null);
 
   useEffect(() => {
     // 플레이어 이미지 업그레이드 (prop 변경 시)
@@ -40,6 +49,41 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
       playerRef.current.setImage(playerImageUrl);
     }
   }, [playerImageUrl]);
+
+  useEffect(() => {
+    if (mapImageUrl) {
+      const img = new Image();
+      img.src = mapImageUrl;
+      img.onload = () => {
+        mapImageRef.current = img;
+        // 패턴은 context가 필요하므로 렌더링 루프나 별도 효과에서 생성
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            mapPatternRef.current = ctx.createPattern(img, "repeat");
+          }
+        }
+      };
+    } else {
+      mapImageRef.current = null;
+      mapPatternRef.current = null;
+    }
+  }, [mapImageUrl]);
+
+  useEffect(() => {
+    // 선택된 무기 목록 동기화
+    selectedWeapons.forEach((sw) => {
+      const exists = weaponsRef.current.some((w) => w.config.id === sw.id);
+      if (!exists && WEAPON_CONFIGS[sw.id]) {
+        weaponsRef.current.push(new Weapon(WEAPON_CONFIGS[sw.id]));
+      } else if (exists) {
+        // 레벨업 처리 (간단하게 레벨 값 업데이트)
+        const weapon = weaponsRef.current.find((w) => w.config.id === sw.id);
+        if (weapon) weapon.level = sw.level;
+      }
+    });
+  }, [selectedWeapons]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => keysRef.current.add(e.key);
@@ -129,12 +173,15 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           spawnTimerRef.current = 0;
         }
 
-        // 자동 발사 (1초마다)
-        fireTimerRef.current += deltaTime;
-        if (fireTimerRef.current > 1.0) {
-          autoFire();
-          fireTimerRef.current = 0;
-        }
+        // 무기 업데이트 및 발사
+        weaponsRef.current.forEach((weapon) => {
+          weapon.update(
+            time / 1000,
+            playerRef.current,
+            monstersRef.current,
+            projectilesRef.current,
+          );
+        });
 
         // 투사체 업데이트 및 충돌 검사
         projectilesRef.current.forEach((projectile) => {
@@ -203,8 +250,26 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.fillStyle = "#1a1a2e";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 격자 그리기
-        drawInfiniteGrid(ctx, canvas.width, canvas.height, cameraRef.current);
+        // 배경 그리기 (이미지 패턴 또는 격자)
+        if (mapPatternRef.current) {
+          ctx.save();
+          // 카메라 이동에 맞춰 패턴의 위치를 조정하여 무한 타일링 구현
+          const matrix = new DOMMatrix();
+          ctx.setTransform(
+            matrix.translate(-cameraRef.current.x, -cameraRef.current.y),
+          );
+          ctx.fillStyle = mapPatternRef.current;
+          ctx.fillRect(
+            cameraRef.current.x,
+            cameraRef.current.y,
+            canvas.width,
+            canvas.height,
+          );
+          ctx.restore();
+        } else {
+          // 격자 그리기 (기본 배경)
+          drawInfiniteGrid(ctx, canvas.width, canvas.height, cameraRef.current);
+        }
 
         // 개체들 그리기
         ctx.save();
@@ -271,24 +336,16 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   }, []);
 
   return (
-    <div
-      className="game-canvas-container"
-      style={{ textAlign: "center", padding: "20px" }}
-    >
+    <div className="game-canvas-wrapper">
       <canvas
         ref={canvasRef}
         width={800}
         height={600}
         style={{
-          border: "4px solid #333",
-          borderRadius: "8px",
-          boxShadow: "0 0 20px rgba(0,0,0,0.5)",
           backgroundColor: "#111",
+          display: "block",
         }}
       />
-      <div style={{ color: "#aaa", marginTop: "10px" }}>
-        Move with WASD or Arrow Keys
-      </div>
     </div>
   );
 };

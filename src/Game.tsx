@@ -12,6 +12,7 @@ import InventoryHotbar from "./Component/vampire_game/InventoryHotbar";
 import GameCanvas from "./Component/vampire_game/GameCanvas";
 import { UpgradeInfo } from "./Component/vampire_game/UpgradeCard";
 import playerIdleImg from "./assets/player_idle1.png";
+import stage1Image from "./assets/stage1.png";
 
 /** 뱀파이어 서바이버 게임 */
 function Game() {
@@ -45,7 +46,7 @@ function Game() {
   const [playerImage, setPlayerImage] = useState<string | undefined>(
     playerIdleImg,
   );
-  const [mapImage, setMapImage] = useState<string | undefined>(undefined);
+  const [mapImage, setMapImage] = useState<string | undefined>(stage1Image);
   const [monsterImages, setMonsterImages] = useState<Record<string, string>>(
     {},
   );
